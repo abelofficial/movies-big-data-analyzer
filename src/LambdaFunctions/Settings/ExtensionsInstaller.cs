@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Domain;
 using Domain.Interfaces;
+using Domain.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -11,6 +13,7 @@ public class LambdaFunctionsExtensionsInstaller : IExtensionsInstaller
 {
     public void InstallServices(IServiceCollection services, IConfiguration config)
     {
+        services.AddConfigurations(config.GetSection(nameof(LogLevel)), new LogLevel());
     }
 }
 

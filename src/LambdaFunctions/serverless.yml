@@ -1,38 +1,91 @@
-service: booking-service
+service: movies-big-data-analyzer
 
 plugins:
-    - serverless-appsync-plugin
+    - serverless-iam-roles-per-function
 
 provider:
     name: aws
     runtime: dotnet6
     region: eu-north-1
+    stackName: ${self:service}-${self:custom.stage}
     environment:
         STAGE: ${self:custom.stage}
+        DataSet__BucketName: !Ref dataSetBucket
+    iamRoleStatements:
+        - Effect: "Allow"
+          Action:
+              - lambda:InvokeFunction
+          Resource: "*"
 
 custom:
     stage: ${opt:stage, 'dev'}
-    region: eu-north-1
+    region: ${self:provider.region}
+    serverless-iam-roles-per-function:
+        defaultInherit: true
+    dataSetBucketName: ${self:custom.stage}-${self:custom.stage}
 
 package:
-    artifact: bin/Debug/net6.0/LambdaFunctions.zip
+    artifact: bin/release/net6.0/LambdaFunctions.zip
 
 functions:
-    sayHello:
-        handler: LambdaFunctions::LambdaFunctions.Functions.Hello::SayHello
-        iamRoleStatementsInherit: true
-        iamRoleStatementsName: sayHello-lambda-access-${self.custom.stage}
+    processDataSetQueueListener:
+        handler: LambdaFunctions::LambdaFunctions.Events.QueueEvents::ProcessDataSet
+        description: A queue to process dataset from S#
+        iamRoleStatementsName: ${self:service}-processDataSetQueueListener-role
         iamRoleStatements:
             - Effect: "Allow"
               Action:
                   - dynamodb:GetItem
                   - dynamodb:PutItem
-              Resources:
-                  - "arn:aws:dynamodb:${self.custom.region}:*:table/helloTable-${self:custom.stage}"
+              Resource: !GetAtt helloTable.Arn
+        events:
+            - sqs:
+                  arn: !GetAtt processDataSetFromS3Queue.Arn
+    sayHello:
+        handler: LambdaFunctions::LambdaFunctions.Functions.Hello::SayHello
+        iamRoleStatementsName: ${self:service}-sayHello-role
+        iamRoleStatements:
+            - Effect: "Allow"
+              Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+              Resource: !GetAtt helloTable.Arn
 
 resources:
     Resources:
-        HelloTable:
+        processDataSetFromS3Queue:
+            Type: AWS::SQS::Queue
+            Properties:
+                QueueName: ${self:provider.stackName}-processDataSetFromS3Queue-${self:custom.stage}
+                SqsManagedSseEnabled: false
+                VisibilityTimeout: 60
+                Tags:
+                    - Key: "Queue"
+                      Value: "process"
+        processDataSetFromS3QueuePolicy:
+            Type: AWS::SQS::QueuePolicy
+            Properties:
+                Queues:
+                    - !Ref processDataSetFromS3Queue
+                PolicyDocument:
+                    Id: "sqsPolicy"
+                    Version: "2012-10-17"
+                    Statement:
+                        - Sid: "allow-process-dataset-message"
+                          Action:
+                              - "SQS:SendMessage"
+                          Effect: "Allow"
+                          Resource: !GetAtt processDataSetFromS3Queue.Arn
+                          Principal: "*"
+        dataSetBucket:
+            Type: AWS::S3::Bucket
+            Properties:
+                PublicAccessBlockConfiguration:
+                    BlockPublicAcls: true
+                    IgnorePublicAcls: true
+                    BlockPublicPolicy: true
+                    RestrictPublicBuckets: true
+        helloTable:
             Type: AWS::DynamoDB::Table
             Properties:
                 TableName: helloTable-${self:custom.stage}

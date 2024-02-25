@@ -2,9 +2,9 @@ using Application.CQRS;
 
 namespace Application.CQRS.Results;
 
-public class SayHelloResponse : IResponse
+public class EventResponse : IResponse
 {
-    public string Message
+    public object Message
     {
         get;
         set;

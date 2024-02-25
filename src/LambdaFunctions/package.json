@@ -1,5 +1,5 @@
 {
-    "name": "booking-service",
+    "name": "movies-big-data-analyzer",
     "keywords": [],
     "author": "Abel Sintaro",
     "version": "1.0.0",
@@ -12,6 +12,7 @@
     },
     "dependencies": {
         "serverless": "^3.4.0",
-        "serverless-appsync-plugin": "^2.2.0"
+        "serverless-appsync-plugin": "^2.2.0",
+        "serverless-iam-roles-per-function": "^3.0.1"
     }
 }

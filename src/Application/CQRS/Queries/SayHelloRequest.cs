@@ -1,6 +1,6 @@
 using Application.CQRS;
 
-using ICQRSRequest = MediatR.IRequest<Application.Results.SayHelloResponse>;
+using ICQRSRequest = MediatR.IRequest<Application.CQRS.Results.SayHelloResponse>;
 
 namespace Application.Queries;
 

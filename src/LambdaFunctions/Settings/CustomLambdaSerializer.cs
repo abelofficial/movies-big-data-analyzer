@@ -1,5 +1,7 @@
 using System.IO;
+using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Amazon.Lambda.Core;
 
@@ -27,10 +29,12 @@ public class CustomLambdaSerializer : ILambdaSerializer
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             Converters = { new JsonStringEnumConverter() },
-            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+            Encoder = JavaScriptEncoder.Create(new TextEncoderSettings(System.Text.Unicode.UnicodeRanges.All))
         };
-        var json = JsonSerializer.Serialize(response, policy);
-        var bytes = System.Text.Encoding.UTF8.GetBytes(json);
+
+        var json = JsonNode.Parse(JsonSerializer.Serialize(response, policy));
+        var bytes = System.Text.Encoding.UTF8.GetBytes(json.ToJsonString());
         responseStream.Write(bytes, 0, bytes.Length);
     }
 

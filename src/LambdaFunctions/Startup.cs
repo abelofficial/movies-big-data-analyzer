@@ -1,5 +1,4 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using LambdaFunctions.Settings;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -8,22 +7,24 @@ namespace LambdaFunctions;
 
 public class Startup
 {
-    public static IConfiguration Configuration
-    {
-        get; private set;
-    }
 
-    public static void Configure()
+    public static IConfigurationRoot BuildConfiguration()
     {
-        Configuration = new ConfigurationBuilder()
-            .SetBasePath(AppContext.BaseDirectory)
+        return new ConfigurationBuilder()
+            .SetBasePath(Directory.GetCurrentDirectory())
             .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
             .AddEnvironmentVariables()
             .Build();
     }
 
-    public static void ConfigureServices(IServiceCollection services)
+    public static IServiceCollection ConfigureServices()
     {
-        services.InstallServicesFromAssembly(Configuration);
+        var services = new ServiceCollection();
+        var configuration = BuildConfiguration();
+
+        services.InstallServicesFromAssembly(configuration);
+        return services;
     }
 }
+
+

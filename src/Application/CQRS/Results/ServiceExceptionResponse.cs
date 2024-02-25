@@ -1,7 +1,7 @@
 using System.Text.Json.Serialization;
 using Domain.Interfaces;
 
-namespace Application.Results;
+namespace Application.CQRS.Results;
 
 public class ServiceExceptionResponse : IServiceExceptionResponse
 {
